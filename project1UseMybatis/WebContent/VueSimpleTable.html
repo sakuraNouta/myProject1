@@ -1,0 +1,53 @@
+<script src="vue.min.js"></script>
+<script src="jquery.min.js"></script>
+
+<div id="div1">
+	<table align="center">
+		<tr>
+			<td>code</td>
+			<td>name</td>
+			<td>性别</td>
+			<td>年龄</td>
+			<td>职位</td>
+		</tr>
+		<tr v-for="user in users">
+			<td>{{user.user.code}}</td>
+			<td>{{user.user.name}}</td>
+			<td>{{getSex(user.user.sex)}}</td>
+			<td>{{user.user.age}}</td>
+			<td>{{getPos(user.user.position)}}</td>
+			<td style="display:none">{{user.user.key}}</td>
+		</tr>
+	</table>
+</div>
+
+
+<script>
+	var url = "userGetServlet";
+	$.get(
+		url,
+		{"start" : 0},
+		
+		function(result){
+			var json = JSON.parse(result);
+			
+			new Vue({
+				el: '#div1',
+				data: {
+					users : json.users
+				},
+				methods:{
+					getSex: function(sex){
+						if(sex == 0) return "男";
+						else return "女";
+					},
+					getPos: function(pos){
+						if(pos == 1) return '经理'; 
+						else return '职员';
+					}
+				}
+			})
+			
+		});
+	
+</script>

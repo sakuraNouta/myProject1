@@ -69,7 +69,7 @@ public class UserGetServlet extends HttpServlet{
 		
 		int next = start + count;
 		
-		users = mapper.list(start,next);
+		users = mapper.list(start+1,next);
 		int total = mapper.getTotal();
 
 		//½«users·â×°³Éjson

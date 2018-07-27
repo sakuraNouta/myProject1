@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script type="text/javascript" src="jquery.min.js"></script>
+    <link href="http://how2j.cn/study/css/bootstrap/3.3.6/bootstrap.min.css" rel="stylesheet">
+    <script src="http://how2j.cn/study/js/bootstrap/3.3.6/bootstrap.min.js"></script>
+
+    <meta charset="UTF-8">
+    <title>JS操作表格</title>
+
+    <style>
+        .btn_div{
+           padding-top:20px;
+           text-align: center;
+        }
+        #page{
+        	margin-right:5px;
+        	width:100px;
+        }
+    </style>
+
+    <script>
+			
+        $(document).ready(function(){
+			var start = 0;
+			var total = 0;
+			/* ajax获取user数据(xml) */
+			 getUserXML(start);
+			
+			function getUserXML(start){
+				$.ajax({
+					url : "userGetServlet",
+					type : "get",
+					dataType : "xml",
+					data : {"start" : start},
+					success : function(result){
+						
+                        //每次请求，清空原tbody,更新页码
+                        $("#page").val(start/10+1);
+                        //$("#page").attr("value", start/10+1);
+                        $("#body").empty();
+                        
+                        total = result.getElementsByTagName('total')[0].childNodes[0].nodeValue;
+						
+  						var users = result.getElementsByTagName('user');
+ 						for(var i = 0; i < users.length; i++){
+							var key = users[i].getElementsByTagName('key')[0].childNodes[0].nodeValue;
+							var code = users[i].getElementsByTagName('code')[0].childNodes[0].nodeValue;
+							var name = users[i].getElementsByTagName('name')[0].childNodes[0].nodeValue;
+							var sexNum = users[i].getElementsByTagName('sex')[0].childNodes[0].nodeValue;
+							var age = users[i].getElementsByTagName('age')[0].childNodes[0].nodeValue;
+							var positionNum = users[i].getElementsByTagName('position')[0].childNodes[0].nodeValue;
+							
+							var sex = (sexNum) => {if(sexNum == 0) return '男'; else return '女';};
+							var position = (positionNum) => {if(positionNum == 1) return '经理'; else return '职员';};
+							
+							var index = "<tr class='tr'><td class='code'>" + code + "</td>" +
+                            "<td class='name'>" + name + "</td>" +
+                            "<td class='sex'>" + sex(sexNum) + "</td>" +
+                            "<td class='age'>" + age + "</td>" +
+                            "<td class='position'>" + position(positionNum) + "</td>" +
+                            "<td class='key' style='display:none'>" + key + "</td>";
+                            
+			                $("#body").append(index);
+ 						}
+
+					}
+				});
+			} 
+
+			
+			$("#btn_pre").click(function(){
+				if(start-10 >= 0) start -= 10;
+				getUserXML(start);
+			});
+			$("#btn_jump").click(function(){
+				var page = $("#page").val();
+				start = (page-1) * 10
+				getUserXML(start);
+			});
+			$("#btn_next").click(function(){
+				if(start+10 <= total) start += 10;
+				getUserXML(start);
+			});
+			$("#btn_last").click(function(){
+				start = total-total%10
+				getUserXML(start);
+			});
+		
+			xml = "<root><users>";
+		
+            /*动态增加元素绑定事件*/
+            $("table").on("click", ".tr", function(){
+                if($(this).attr("class").search("active") == -1)
+                    $(this).addClass("active");
+                else $(this).removeClass("active");
+            });
+
+            $("#btn_add").click(function(){
+                var index = "<tr class='edit add'><td class='code'><input></td>" +
+                            "<td class='name'><input></td>" +
+                            "<td class='sex'><select><option>男</option><option>女</option></select></td>" +
+                            "<td class='age'><input></td>" +
+                            "<td class='position'><select><option>职员</option><option>经理</option></select></td>" +
+                            "<td class='key' style='display:none'>0</td></tr>";
+                $("#body").prepend(index);
+                $("#btn_save").removeClass("disabled");
+            });
+
+            $("#btn_edit").click(function(){
+
+                if($(".active").length <= 0){
+                    alert("未选择记录!");
+                    return;
+                }
+                
+                 $(".active").each(function(){
+                	var code = $(this).find(".code").text();
+                	$(this).find(".code").html("");
+                	$(this).find(".code").append("<input value=" + code + ">");
+                	
+                	var name = $(this).find(".name").text();
+                	$(this).find(".name").html("");
+                	$(this).find(".name").append("<input value=" + name + ">");
+                	
+                	var sex = $(this).find(".sex").text();
+                	$(this).find(".sex").html("");
+                	$(this).find(".sex").append("<select><option>男</option><option>女</option></select>");
+                	$(this).find(".sex select option:contains("+ sex +")").attr("selected",true);
+                	
+                	var age = $(this).find(".age").text();
+                	$(this).find(".age").html("");
+                	$(this).find(".age").append("<input value=" + age + ">");
+                	
+                	var position = $(this).find(".position").text();
+                	$(this).find(".position").html("");
+                	$(this).find(".position").append("<select><option>职员</option><option>经理</option></select>");
+                	$(this).find(".position select option:contains("+ position +")").attr("selected",true);  
+                }); 
+
+                $(".active").removeClass("tr").addClass("edit update");
+                $("#btn_edit").addClass("disabled");
+                $("#btn_save").removeClass("disabled");
+            });
+
+            $("#btn_del").click(function(){
+                if($(".active").length <= 0){
+                    alert("请选择一条记录进行操作");
+                    return;
+                }
+                
+                xml +=  "<user>";
+				xml += "<method>delete</method>"
+				var key = $(".active").find(".key").text();
+				xml += "<key>" + key + "</key>";				
+				xml += "</user>";
+                
+                $(".active").remove();
+                $("#btn_save").removeClass("disabled");
+            });
+
+            $("#btn_save").click(function(){
+				$(".edit").each(function(){
+					xml +=  "<user>";
+					if($(this).attr("class").search("add") != -1)
+						xml += "<method>add</method>"
+					if($(this).attr("class").search("update") != -1)
+						xml += "<method>update</method>"
+						
+					var key = $(this).find(".key").text();
+					
+					var code = $(this).find(".code input").val();
+					//alert(code)
+					//$(this).find(".code").empty();
+					//$(this).find(".code").append(code);
+					
+					var name = $(this).find(".name input").val();
+					//$(this).find(".name").empty();
+					//$(this).find(".name").append(name);
+					
+					var sex = $(this).find(".sex option:selected").text();
+					//$(this).find(".sex").empty();
+					//$(this).find(".sex").append(sex);
+					
+					var age = $(this).find(".age input").val();
+					//$(this).find(".age").empty();
+					//$(this).find(".age").append(age);
+					
+					var position = $(this).find(".position option:selected").text();
+					//$(this).find(".position").empty();
+					//$(this).find(".position").append(position);
+					
+					var sexNum = (sex) => {if(sex == '男') return 0;else return 1;};
+					var posNum = (position) => {if(position == '经理') return 1;else return 2;};
+					
+					xml += "<key>" + key + "</key>";
+					xml += "<code>" + code + "</code>";
+					xml += "<name>" + name + "</name>";
+					xml += "<sex>" + sexNum(sex) + "</sex>";
+					xml += "<age>" + age + "</age>";
+					xml += "<position>" + posNum(position) + "</position>";					
+					xml += "</user>";
+					
+				});
+
+                $(".edit").each(function(){
+                    $(this).removeClass("edit active add update").addClass("tr");
+                });
+                $("#btn_edit").removeClass("disabled");
+                $("#btn_save").addClass("disabled");
+				
+				xml += "</users></root>";
+				var url = "userSaveServlet";
+				$.ajax({
+					url : url,
+					type : "post",
+					dataType : "xml",
+					data : {"data" : xml},
+					success : function(result){
+						/* js对xml进行解析 */
+						//alert(result);
+						var code = result.getElementsByTagName("code")[0].childNodes[0].nodeValue;
+						if(code == '0')
+							alert("执行成功");
+						else
+							alert("执行失败");
+						
+						//按下保存,清空tbody的内容,执行ajax请求，从oracle获得新数据
+						getUserXML(start);
+					},
+					error : function(XMLHttpRequest, textStatus, errorThrown){
+						alert(XMLHttpRequest.status); 
+			　　                 	alert(XMLHttpRequest.readyState); 
+			　　                 	alert(textStatus);        
+					}
+				});
+				xml = "<root><users>";
+            });
+        });
+    </script>
+
+</head>
+<body>
+
+    <div class="btn_div">
+        <button class="btn btn-primary" id="btn_add">增加</button>
+        <button class="btn btn-primary" id="btn_edit">修改</button>
+        <button class="btn btn-primary" id="btn_del">删除</button>
+        <button class="btn btn-primary disabled" id="btn_save">保存</button>
+    </div>
+
+    <table class="table table-hover" style="margin:10px">
+        <thead>
+			<tr>
+				<th>员工代码</th>
+				<th>员工名称</th>
+				<th>性别</th>
+				<th>年龄</th>
+				<th>职位</th>
+			</tr>
+        </thead>
+        <tbody id="body">
+           <!-- <tr class="tr">
+                <td class="code">11</td>
+                <td class="name">张三</td>
+                <td class="sex">女</td>
+                <td class="age">22</td>
+                <td class="position">职员</td>
+                <td style='display:none'></td>
+            </tr>
+            <tr class="tr">
+                <td class="code">13</td>
+                <td class="name">李四</td>
+                <td class="sex">男</td>
+                <td class="age">24</td>
+                <td class="position">经理</td>
+            </tr>  -->
+        </tbody>
+    </table>
+	
+	<div class="btn_div">
+        <button class="btn btn-primary" id="btn_pre">上一页</button>
+       	 跳转至:<input id="page" value="0"><button class="btn btn-primary" id="btn_jump">跳转</button>
+        <button class="btn btn-primary" id="btn_next">下一页</button>
+        <button class="btn btn-primary" id="btn_last">最后一页</button>
+    </div>
+	
+</body>
+</html>

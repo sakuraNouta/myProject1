@@ -38,6 +38,7 @@ public class UserDAO {
 			while(rs.next()) {
 				total = rs.getInt(1);
 			}
+			rs.close();
 		}catch(SQLException e) {
 			e.printStackTrace();
 		}
@@ -107,10 +108,9 @@ public class UserDAO {
 	
 	public User get(int key) {
 		User user = null;
-		try(Connection c = getConnection();Statement s= c.createStatement();) {
-			String sql = "select * from user_ where key = " + key;
-			
-			ResultSet rs = s.executeQuery(sql);
+		String sql = "select * from user_ where key = " + key;
+		try(Connection c = getConnection();Statement s= c.createStatement();
+				ResultSet rs = s.executeQuery(sql);) {
 			
 			if(rs.next()) {
 				user = new User();
@@ -139,12 +139,13 @@ public class UserDAO {
 		
 		String sql = "select a1.* from (select a.*,rownum rn from (select * from user_ order by code) a) a1 where rn between ? and ?";
 		
-		try(Connection c= getConnection();PreparedStatement ps = c.prepareStatement(sql);) {
-			ps.setInt(1,start);
-			ps.setInt(2,count);
+		try(Connection c= getConnection(); PreparedStatement ps = c.prepareStatement(sql);) {
+
+			 ps.setInt(1,start+1);
+			 ps.setInt(2,count);
+			 ResultSet rs = ps.executeQuery();
 			
-			ResultSet rs = ps.executeQuery();
-			
+		
 			while(rs.next()) {
 				User user = new User();
 				int key = rs.getInt("key");
@@ -162,7 +163,7 @@ public class UserDAO {
 				
 				users.add(user);
 			}
-			
+			rs.close();
 		}catch(SQLException e) {
 			e.printStackTrace();
 		}
