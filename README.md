@@ -3,12 +3,15 @@
 ### project1包括:
 #### xml表格
 后台 serlvet+JDBC 前端 jquery+bootstrap 数据 xml<br>
+html文件：xml.html
 
 ### project1UseMybatis包括:
 #### json表格
 后台 servlet+mybaits 前端 jquery+bootstrap 数据 json<br>
+html文件：json.html
 #### vue表格
 后台 servlet+mybaits 前端 vue+bootstrap 数据 json<br>
+html文件：vue.html
 >以数据为驱动，与前两个表格略有不一致<br>
 和json表格使用同一个后台<br>
 
@@ -18,7 +21,7 @@
 >图1 CPU数据读取自数据库<br>
 其余图表数据为js随机生成<br>
 
-EChartsTest.html
+html文件：EChartsTest.html
 
 #### 2数据中心(仅图表)<br>
-EChartsTest2.html
+html文件：EChartsTest2.html
