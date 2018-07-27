@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<script type="text/javascript" src="vue.min.js"></script>
+		<script type="text/javascript" src="fetch.min.js"></script>
+		<script type="text/javascript" src="jquery.min.js"></script>
+		<link href="http://how2j.cn/study/css/bootstrap/3.3.6/bootstrap.min.css" rel="stylesheet">
+		<script src="http://how2j.cn/study/js/bootstrap/3.3.6/bootstrap.min.js"></script>
+			
+		<title>Vue表格</title>
+		
+		<style>
+			.btn{
+				margin-left:5px;
+			}
+			.btn-success{
+				margin-left:30px;
+			}
+			.btn-primary{
+				margin-left: 30px;
+			}
+	        .btn_div{
+	           padding-top:20px;
+	           text-align: center;
+	        }
+		</style>
+	</head>
+	
+<body>
+
+    <table id="table" class="table table-hover" style="margin:10px">
+        <thead>
+			<tr>
+				<th>员工代码</th>
+				<th>姓名</th>
+				<th>性别</th>
+				<th>年龄</th>
+				<th>职位</th>
+				<th>操作<button class="btn btn-success" @click='save'>保存</button></th>
+			</tr>
+        </thead>
+        <tbody>
+        	
+        	<tr v-if="show">
+        	<td><input style="width:60px" v-model='user.code'></td>
+               <td><input style="width:60px" v-model='user.name'></td>
+               <td><select v-model='user.sex'><option>男</option><option>女</option></select></td>
+               <td><input style="width:60px" v-model='user.age'></td>
+               <td><select v-model='user.position'><option>职员</option><option>经理</option></select></td>
+               <td style='display:none'>0</td>
+               <td><button class="btn btn-primary" @click='insert'>增加</button><td>
+               
+			</tr>
+			
+			<tr v-else>
+        	<td><input style="width:60px" v-model='user.code'></td>
+               <td><input style="width:60px" v-model='user.name'></td>
+               <td><select v-model='user.sex'><option>男</option><option>女</option></select></td>
+               <td><input style="width:60px" v-model='user.age'></td>
+               <td><select v-model='user.position'><option>职员</option><option>经理</option></select></td>
+               <td style='display:none'>0</td>
+               <td><button class="btn btn-success" @click='change'>修改</button><td>
+			</tr>
+        
+			<tr v-for="user,index in users">
+				<td>{{user.code}}</td>
+				<td>{{user.name}}</td>
+				<td>{{user.sex}}</td>
+				<td>{{user.age}}</td>
+				<td>{{user.position}}</td>
+				<td :id=index style="display:none">{{user.key}}</td>
+				<td><button class="btn btn-info" @click="edit(index)">编辑</button><button class="btn btn-danger" @click="del(index)">删除</button></td>
+			</tr>
+		</tbody>
+		
+		<tfoot>
+ 			<tr>	
+<!-- 				<td><button  class="btn" @click='btn_pre'>上一页</button><td>
+				<td> 跳转至:<input id="page" value="0"><button class="btn" id="btn_jump">跳转</button></td>
+			    <td><button class="btn" id="btn_next">下一页</button></td>
+			    <td><button class="btn" id="btn_last">最后一页</button> </td> -->
+			    
+			    <td colspan='6'><button  class="btn" @click='pre'>上一页</button>
+				 跳转至:<input v-model='page'><button class="btn" @click='jump'>跳转</button>
+			    <button class="btn" @click='next'>下一页</button>
+			    <button class="btn" @click='last'>最后一页</button> </td>
+			 </tr>
+		</tfoot>
+		
+    </table>
+<script>
+			
+function getUser(val){
+	self = val; 
+	var url = "userGetServlet?start=" + (self.page-1)*10;
+	fetch(url).then(function(response){
+		response.json().then(function(jsonObject){
+			
+			var data = [];
+			var users = jsonObject.users;
+			var total = jsonObject.total;
+			for(var i in users){
+				user = users[i].user;
+				
+				var sex = (sexNum) => {if(sexNum == 0) return '男'; else return '女';};
+				var position = (positionNum) => {if(positionNum == 1) return '经理'; else return '职员';};
+				
+				user.sex = sex(user.sex);
+				user.position = position(user.position);
+				data.push(user);
+			}
+			self.users = data;
+			self.max = parseInt((total+10)/10);
+		})
+	})
+}
+			
+new Vue({
+	el: '#table',
+	data: {
+		user: {'code': '','name': '', 'age': '', 'sex': '男', 'position': '职员','method': 'add','key': '0'},
+		users :[],
+		dels: [],
+		show : true,
+		page: 1,
+		max: 1,
+	},
+	mounted:function(){
+		getUser(this);
+	},
+	methods:{
+		insert: function(){
+			this.users.unshift(Object.assign({},this.user));
+		},
+		edit: function(index){
+			
+			this.show = false;
+			this.users[index].method = 'update';
+			this.user = this.users[index];
+			
+		},
+		change: function(){
+			this.show = !this.show;
+			this.user = {'sex': '男', 'position': '职员'};
+		},					
+		del: function(index){
+			this.users[index].method = 'delete';
+			this.dels.push(this.users[index]);
+			this.users.splice(index,1);
+		}, 
+		save: function(){
+			//alert(JSON.stringify(this.users));
+			var data = this.users;
+			for(var i in this.dels)
+				data.push(this.dels[i]);
+
+			this.dels = [];
+			this.users = [];
+			
+			self = this;
+			
+			console.log({"data":JSON.stringify(data)});
+			
+			fetch("userSaveServlet",{
+ 			 	headers: { 
+		            "Content-Type": 'application/json; charset=UTF-8'
+		        }, 
+		        method:'POST',
+				 body: JSON.stringify(data) 
+			})
+			.then(function(result){
+				getUser(self);
+				alert("success");
+			})
+		},
+		pre: function(){
+			if(this.page >= 2){
+				this.page-=1;
+				getUser(this);
+			}
+			
+		},
+		next: function(){
+			if(this.page < this.max){
+				this.page+=1;
+				getUser(this);
+			}
+		},
+		jump: function(){
+			if(this.page >= 1 && this.page <= this.max)
+				getUser(this);
+		},
+		last: function(){
+			this.page = this.max;
+			getUser(this);
+		},
+	}
+})
+</script>
+		
+
+		
+
+</body>
+</html>
