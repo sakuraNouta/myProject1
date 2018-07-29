@@ -68,7 +68,6 @@
 				<td>{{user.sex}}</td>
 				<td>{{user.age}}</td>
 				<td>{{user.position}}</td>
-				<td :id=index style="display:none">{{user.key}}</td>
 				<td><button class="btn btn-info" @click="edit(index)">编辑</button><button class="btn btn-danger" @click="del(index)">删除</button></td>
 			</tr>
 		</tbody>
@@ -149,8 +148,14 @@ new Vue({
 			this.users.splice(index,1);
 		}, 
 		save: function(){
-			//alert(JSON.stringify(this.users));
-			var data = this.users;
+			//过滤users,条件：method为空			
+			var data = [];
+			
+			for(var i in this.users){
+				if(this.users[i].method.length != 0)
+					data.push(this.users[i]);
+			}
+			
 			for(var i in this.dels)
 				data.push(this.dels[i]);
 
